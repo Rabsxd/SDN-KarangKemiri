@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase/config';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-
-// Kita tidak lagi butuh style inline
+import { motion } from 'framer-motion';
+import { fadeInUp } from '../utils/animations';
 
 function DaftarSiswa() {
     const [siswaList, setSiswaList] = useState([]);
@@ -11,7 +11,6 @@ function DaftarSiswa() {
 
     useEffect(() => {
         const fetchSiswa = async () => {
-            // Logika fetch data tidak berubah
             setLoading(true);
             try {
                 const q = query(collection(db, 'siswa'), orderBy("kelas"), orderBy("nama"));
@@ -27,19 +26,24 @@ function DaftarSiswa() {
         fetchSiswa();
     }, []);
 
-    // Logika untuk mengelompokkan siswa berdasarkan kelas tidak berubah
-    const siswaByKelas = siswaList.reduce((acc, siswa) => {
-        const { kelas } = siswa;
-        if (!acc[kelas]) {
-            acc[kelas] = [];
-        }
-        acc[kelas].push(siswa);
-        return acc;
-    }, {});
+    // Memindahkan logika .reduce() ke dalam return agar hanya berjalan setelah data siap
+    const getSiswaByKelas = () => {
+        if (!siswaList) return {}; // Pengaman jika siswaList bukan array
+        return siswaList.reduce((acc, siswa) => {
+            const { kelas } = siswa;
+            if (!acc[kelas]) {
+                acc[kelas] = [];
+            }
+            acc[kelas].push(siswa);
+            return acc;
+        }, {});
+    };
 
     if (loading) {
         return <p className="text-center py-10 text-gray-500">Memuat daftar siswa...</p>;
     }
+
+    const siswaByKelas = getSiswaByKelas();
 
     return (
         <div className="bg-gray-50 py-12">
@@ -55,11 +59,17 @@ function DaftarSiswa() {
                 
                 <div className="space-y-12">
                     {Object.keys(siswaByKelas).sort().map(kelas => (
-                        <div key={kelas} className="bg-white p-6 rounded-lg shadow-md">
+                        <motion.div 
+                          key={kelas} 
+                          className="bg-white p-6 rounded-lg shadow-md"
+                          initial="hidden"
+                          whileInView="show"
+                          viewport={{ once: true, amount: 0.3 }}
+                          variants={fadeInUp}
+                        >
                             <h3 className="text-2xl font-bold text-sky-700 border-b-2 border-sky-200 pb-2 mb-4">
                                 {kelas}
                             </h3>
-                            {/* PERUBAHAN UTAMA DI BARIS DI BAWAH INI */}
                             <ol className="list-decimal list-inside md:columns-2 lg:columns-3 xl:columns-4 gap-x-8">
                                 {siswaByKelas[kelas].map(siswa => (
                                     <li key={siswa.id} className="text-gray-800 text-lg mb-2 break-inside-avoid">
@@ -67,7 +77,7 @@ function DaftarSiswa() {
                                     </li>
                                 ))}
                             </ol>
-                        </div>
+                        </motion.div>
                     ))}
                 </div>
             </div>

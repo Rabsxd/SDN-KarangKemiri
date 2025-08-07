@@ -3,17 +3,17 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebase/config';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import BeritaCard from '../components/BeritaCard';
+import { motion } from 'framer-motion';
+import { staggerContainer, fadeInUp } from '../utils/animations.js';
+
 
 function Berita() {
   const [beritaList, setBeritaList] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // STATE BARU UNTUK PAGINASI
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 4; // Tampilkan 4 berita per halaman
+  const itemsPerPage = 4;
 
   useEffect(() => {
-    // Logika fetchBerita tidak berubah, tetap ambil semua data
     const fetchBerita = async () => {
       setLoading(true);
       try {
@@ -31,13 +31,10 @@ function Berita() {
     fetchBerita();
   }, []);
 
-  // LOGIKA UNTUK MEMOTONG DATA SESUAI HALAMAN
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentBerita = beritaList.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(beritaList.length / itemsPerPage);
-
-  // Fungsi untuk mengganti halaman
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   if (loading) {
@@ -47,37 +44,47 @@ function Berita() {
   return (
     <div className="bg-gray-50 py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
+        <motion.div 
+          className="text-center mb-12"
+          variants={fadeInUp}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.5 }}
+        >
           <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
             Berita & Kegiatan Sekolah
           </h2>
           <p className="mt-4 text-lg text-gray-500">
             Informasi terbaru seputar kegiatan dan prestasi di lingkungan sekolah.
           </p>
-        </div>
+        </motion.div>
         
-        <div>
+        <motion.div
+          key={currentPage} 
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+        >
           {currentBerita.length > 0 ? (
-            // Gunakan 'currentBerita' untuk di-map, bukan 'beritaList' lagi
             currentBerita.map(berita => (
-              <BeritaCard
-                key={berita.id}
-                id={berita.id}
-                judul={berita.judul}
-                isi={berita.isi}
-                tanggalPublikasi={berita.tanggalPublikasi}
-                gambarUrl={berita.gambarUrl}
-              />
+              <motion.div key={berita.id} variants={fadeInUp}>
+                <BeritaCard
+                  id={berita.id}
+                  judul={berita.judul}
+                  isi={berita.isi}
+                  tanggalPublikasi={berita.tanggalPublikasi}
+                  gambarUrl={berita.gambarUrl}
+                />
+              </motion.div>
             ))
           ) : (
             <p className="text-center text-gray-500">Belum ada berita yang dipublikasikan.</p>
           )}
-        </div>
+        </motion.div>
 
-        {/* BAGIAN BARU: TOMBOL PAGINASI */}
+        {/* KODE PAGINASI YANG DIKEMBALIKAN */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center mt-8 space-x-2">
-            {/* Tombol Sebelumnya */}
             <button 
               onClick={() => paginate(currentPage - 1)} 
               disabled={currentPage === 1}
@@ -85,8 +92,6 @@ function Berita() {
             >
               Sebelumnya
             </button>
-
-            {/* Tombol Nomor Halaman */}
             {Array.from({ length: totalPages }, (_, i) => (
               <button 
                 key={i + 1}
@@ -100,8 +105,6 @@ function Berita() {
                 {i + 1}
               </button>
             ))}
-
-            {/* Tombol Selanjutnya */}
             <button 
               onClick={() => paginate(currentPage + 1)} 
               disabled={currentPage === totalPages}
